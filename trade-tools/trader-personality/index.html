@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>外贸人性格测试 · 外贸工具箱</title>
+<style>
+  :root {
+    --bg: #10261D;
+    --bg-2: #17392C;
+    --panel: rgba(23, 57, 44, 0.85);
+    --line: rgba(200, 225, 210, 0.16);
+    --gold: #C9A96A;
+    --gold-2: #E3C98A;
+    --text: #EDF3EE;
+    --text-2: #93A898;
+    --accent: #C9A96A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1000px 650px at 85% -10%, #1D4A38 0%, rgba(29,74,56,0) 55%),
+      radial-gradient(900px 600px at -10% 110%, #0D2C20 0%, rgba(13,44,32,0) 50%),
+      #0B1F17;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    width: 100%;
+    max-width: 640px;
+    padding: 44px 24px 10px;
+    text-align: center;
+  }
+  .kicker {
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 32px; font-weight: 700; letter-spacing: 0.02em; }
+  .sub {
+    margin-top: 8px;
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .stage {
+    width: 100%;
+    max-width: 640px;
+    padding: 22px 24px 44px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 30px 28px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35);
+  }
+
+  /* 开始页 */
+  .intro .badge {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    border: 1px solid rgba(201, 169, 106, 0.5);
+    border-radius: 999px;
+    padding: 6px 16px;
+    margin-bottom: 18px;
+  }
+  .intro h2 { font-size: 24px; font-weight: 700; line-height: 1.4; }
+  .intro p {
+    margin-top: 14px;
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .intro ul {
+    margin: 18px 0 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+  .intro ul li {
+    font-size: 13px;
+    color: var(--text-2);
+    background: rgba(201, 169, 106, 0.07);
+    border: 1px solid rgba(201, 169, 106, 0.22);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .intro ul li b { color: var(--gold-2); font-weight: 600; }
+  .btn-start {
+    width: 100%;
+    margin-top: 24px;
+    background: var(--gold);
+    color: #10261D;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn-start:hover { background: var(--gold-2); }
+  .intro .meta {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-2);
+    text-align: center;
+  }
+
+  /* 答题页 */
+  .progress-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  .progress-top b { color: var(--gold-2); font-size: 16px; }
+  .bar {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(200, 225, 210, 0.12);
+    overflow: hidden;
+    margin-bottom: 26px;
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--gold), var(--gold-2));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .q-num {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .q-text {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.55;
+    margin-bottom: 22px;
+  }
+  .opts { display: grid; gap: 10px; }
+  .opt {
+    text-align: left;
+    background: rgba(12, 34, 24, 0.6);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 13px 16px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.6;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .opt:hover {
+    border-color: var(--gold);
+    background: rgba(201, 169, 106, 0.10);
+  }
+  .opt .key {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    line-height: 20px;
+    text-align: center;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 10px;
+    vertical-align: 1px;
+  }
+  .opt:hover .key { background: var(--gold); color: #10261D; }
+
+  /* 结果页 */
+  .result-head { text-align: center; margin-bottom: 8px; }
+  .result-type {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--gold-2);
+    letter-spacing: 0.04em;
+    margin-top: 6px;
+  }
+  .result-tag {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    border: 1px solid rgba(201, 169, 106, 0.5);
+    border-radius: 999px;
+    padding: 5px 14px;
+  }
+  .result-desc {
+    margin-top: 18px;
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.9;
+  }
+  .result-desc b { color: var(--text); }
+  .chart {
+    margin-top: 24px;
+    display: grid;
+    gap: 12px;
+  }
+  .row .r-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+  .row .r-head span:first-child { color: var(--text); font-weight: 600; }
+  .row .r-head span:last-child { color: var(--gold-2); font-variant-numeric: tabular-nums; }
+  .row .track {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(200, 225, 210, 0.12);
+    overflow: hidden;
+  }
+  .row .fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #8FA86A, var(--gold-2));
+    transition: width 0.9s ease;
+  }
+  .row.top .fill { background: linear-gradient(90deg, var(--gold), var(--gold-2)); }
+  .share-box {
+    margin-top: 26px;
+    border: 1px dashed rgba(201, 169, 106, 0.45);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.8;
+  }
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn-copy {
+    flex: 1;
+    background: var(--gold);
+    color: #10261D;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn-copy:hover { background: var(--gold-2); }
+  .btn-again {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text-2);
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-again:hover { border-color: var(--gold); color: var(--gold); }
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--gold-2);
+    color: #10261D;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 10px 20px;
+    opacity: 0;
+    transition: all 0.25s ease;
+    pointer-events: none;
+    z-index: 20;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  footer {
+    padding: 0 24px 40px;
+    font-size: 12px;
+    color: var(--text-2);
+    text-align: center;
+  }
+  @media (max-width: 480px) {
+    header { padding: 32px 18px 8px; }
+    h1 { font-size: 26px; }
+    .stage { padding: 16px 18px 36px; }
+    .card { padding: 22px 18px; }
+    .q-text { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Foreign Trade Toolkit · 04</div>
+  <h1>外贸人性格测试</h1>
+  <p class="sub">5 道题，测出你的外贸业务人格。</p>
+</header>
+
+<main class="stage" id="stage"></main>
+
+<footer>结果仅供娱乐参考 · 每种性格都有自己擅长的打法</footer>
+<div class="toast" id="toast">文案已复制</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TYPES = {
+    A: {
+      name: "进攻型",
+      en: "HUNTER",
+      tag: "狼性开发 · 敢冲敢谈",
+      desc: "你是典型的狼性业务员：开发新客户对你来说像一场狩猎，当天必回、电话直接、谈价格不手软。你最擅长的不是守，而是攻——把一个陌生市场从零打下来。适合开拓新市场、新品类的攻坚任务。注意控制节奏，给客户留一点思考空间，你的转化率会更高。",
+      share: "我是【进攻型】外贸人——狼性开发，当天必回，敢冲敢谈。你是哪种？测测你的外贸人格"
+    },
+    B: {
+      name: "服务型",
+      en: "CARER",
+      tag: "客户至上 · 复购之王",
+      desc: "你是以客户为中心的服务型业务员：你记得每个客户的喜好，会在客户生日发邮件，遇到问题先站在客户角度想。你的复购率和转介绍率通常很高，客户跟你合作安心。你适合深耕老客户、做大客户关系维护。记得偶尔也主动开发新客户，你的温柔同样能打动新市场。",
+      share: "我是【服务型】外贸人——客户至上，复购率拉满，和客户做朋友。你是哪种？测测你的外贸人格"
+    },
+    C: {
+      name: "技术型",
+      en: "EXPERT",
+      tag: "专业为王 · 数据说话",
+      desc: "你是技术型的实力派：谈客户靠参数、靠认证、靠成本拆解，客户问不倒你。工业品、定制类、高端面料这种复杂产品是你的主场，因为你把产品吃透了。你的客户黏性来自专业信任。偶尔可以少讲一点参数、多聊一点生意，专业之外的温度会让合作更顺。",
+      share: "我是【技术型】外贸人——产品参数烂熟于心，用专业赢得信任。你是哪种？测测你的外贸人格"
+    },
+    D: {
+      name: "资源整合型",
+      en: "HUB",
+      tag: "借力打力 · 人脉畅通",
+      desc: "你是资源整合型选手：你擅长的不是单打独斗，而是把展会、渠道、朋友、供应商的资源串起来。客户要什么，你总能找到门路。你天生适合跑展会、拓渠道、做平台资源对接。你的网络就是你的护城河。记得把资源也沉淀成自己的客户池，别只做中间人。",
+      share: "我是【资源整合型】外贸人——人脉广、门路多，借力打力。你是哪种？测测你的外贸人格"
+    },
+    ALL: {
+      name: "全能型",
+      en: "ALL-ROUND",
+      tag: "攻守兼备 · 全面开花",
+      desc: "你的性格类型非常均衡：既能像猎人一样主动出击，也能像服务者一样维护客户，产品专业度在线，资源整合也在行。这种全面型选手最难被替代——你几乎可以胜任外贸链条上的任何角色。继续保持，找到你最享受的那条路深耕，就是你的王牌。",
+      share: "我是【全能型】外贸人——进攻、服务、专业、资源样样在行。你是哪种？测测你的外贸人格"
+    }
+  };
+
+  var QUESTIONS = [
+    {
+      q: "客户上来就砍价 30%，你的第一反应是？",
+      opts: [
+        { key: "A", text: "直接报出底线价格，并谈好付款与起订条件" },
+        { key: "B", text: "先聊交情和需求，摸清对方在意什么再慢慢谈" },
+        { key: "C", text: "拿出成本构成表，用数据告诉对方这个价已经见底" },
+        { key: "D", text: "找上级要特批额度，同时约客户面谈争取长期合作" }
+      ]
+    },
+    {
+      q: "客户一周没回消息，你会？",
+      opts: [
+        { key: "A", text: "换渠道直接打电话问清楚，不拖泥带水" },
+        { key: "B", text: "发一封关怀邮件，顺带附上客户之前感兴趣的资料" },
+        { key: "C", text: "整理一份更详细的对比资料发过去，用专业打动对方" },
+        { key: "D", text: "先翻翻客户的社交动态和行业新闻，找话题再跟进" }
+      ]
+    },
+    {
+      q: "陌生市场的客户发来第一封询盘，你打算？",
+      opts: [
+        { key: "A", text: "当天必回，直接报价加电话，用速度抢占先机" },
+        { key: "B", text: "先查客户背景和公司规模，再定制一封有针对性的回复" },
+        { key: "C", text: "把产品参数、认证、样品方案一次性发全" },
+        { key: "D", text: "找当地朋友、展会资源先了解一下这个客户的口碑" }
+      ]
+    },
+    {
+      q: "客户要求定制产品，你的思路是？",
+      opts: [
+        { key: "A", text: "先问清楚起订量，量不够就直接谈条件" },
+        { key: "B", text: "耐心梳理客户的使用场景，搞清楚他真正要什么" },
+        { key: "C", text: "评估工艺可行性，给出专业的定制方案和打样计划" },
+        { key: "D", text: "联系熟悉的供应商朋友，看谁有能力接这个单" }
+      ]
+    },
+    {
+      q: "这个月业绩压力很大，你会优先？",
+      opts: [
+        { key: "A", text: "加大开发量，广撒网多报一轮价" },
+        { key: "B", text: "回头维护老客户，深挖复购和转介绍" },
+        { key: "C", text: "研究产品差异化，找出新的卖点重新包装" },
+        { key: "D", text: "跑展会、跑渠道，把更多资源引进来" }
+      ]
+    }
+  ];
+
+  var stage = document.getElementById("stage");
+  var scores = { A: 0, B: 0, C: 0, D: 0 };
+  var qIdx = 0;
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(function () { t.classList.remove("show"); }, 1600);
+  }
+
+  function renderIntro() {
+    stage.innerHTML =
+      '<div class="card intro">' +
+      '<span class="badge">5 QUESTIONS · 2 MINUTES</span>' +
+      "<h2>你是哪种外贸业务员？</h2>" +
+      "<p>外贸没有标准答案，但每个人都有自己的打法。5 道真实业务场景题，测出你的性格底色：</p>" +
+      "<ul>" +
+      "<li><b>进攻型</b> · 狼性开发，敢冲敢谈</li>" +
+      "<li><b>服务型</b> · 客户至上，复购之王</li>" +
+      "<li><b>技术型</b> · 专业为王，数据说话</li>" +
+      "<li><b>资源整合型</b> · 借力打力，人脉畅通</li>" +
+      "</ul>" +
+      '<button class="btn-start" id="start-btn">开始测试</button>' +
+      '<div class="meta">约 2 分钟 · 结果可一键分享</div>' +
+      "</div>";
+    document.getElementById("start-btn").addEventListener("click", function () {
+      qIdx = 0;
+      scores = { A: 0, B: 0, C: 0, D: 0 };
+      renderQuestion();
+    });
+  }
+
+  function renderQuestion() {
+    var q = QUESTIONS[qIdx];
+    var pct = ((qIdx + 1) / QUESTIONS.length * 100);
+    var optsHtml = q.opts.map(function (o) {
+      return '<button class="opt" data-key="' + o.key + '"><span class="key">' + o.key + "</span>" + o.text + "</button>";
+    }).join("");
+    stage.innerHTML =
+      '<div class="card">' +
+      '<div class="progress-top"><span>第 <b>' + (qIdx + 1) + "</b> / " + QUESTIONS.length + " 题</span><span>答题进度</span></div>" +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="q-num">QUESTION ' + (qIdx + 1) + "</div>" +
+      '<div class="q-text">' + q.q + "</div>" +
+      '<div class="opts">' + optsHtml + "</div>" +
+      "</div>";
+    stage.querySelectorAll(".opt").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        scores[btn.dataset.key] += 1;
+        if (qIdx < QUESTIONS.length - 1) {
+          qIdx += 1;
+          renderQuestion();
+        } else {
+          renderResult();
+        }
+      });
+    });
+  }
+
+  function renderResult() {
+    var max = Math.max(scores.A, scores.B, scores.C, scores.D);
+    var winners = [];
+    ["A", "B", "C", "D"].forEach(function (k) {
+      if (scores[k] === max) winners.push(k);
+    });
+    var typeKey = winners.length > 1 ? "ALL" : winners[0];
+    var type = TYPES[typeKey];
+    var order = ["A", "B", "C", "D"];
+    var rows = order.map(function (k) {
+      var pct = Math.round(scores[k] / QUESTIONS.length * 100);
+      return '<div class="row' + (k === typeKey ? " top" : "") + '">' +
+        '<div class="r-head"><span>' + TYPES[k].name + "</span><span>" + pct + "%</span></div>" +
+        '<div class="track"><span class="fill" data-w="' + pct + '"></span></div>' +
+        "</div>";
+    }).join("");
+
+    stage.innerHTML =
+      '<div class="card">' +
+      '<div class="result-head">' +
+      '<span class="result-tag">' + type.tag + "</span>" +
+      '<div class="result-type">' + type.name + "</div>" +
+      '<div class="sub" style="font-size:12px;letter-spacing:0.2em">' + type.en + "</div>" +
+      "</div>" +
+      '<div class="result-desc">' + type.desc + "</div>" +
+      '<div class="chart">' + rows + "</div>" +
+      '<div class="share-box" id="share-text">' + type.share + "</div>" +
+      '<div class="btn-row">' +
+      '<button class="btn-copy" id="copy-btn">复制分享文案</button>' +
+      '<button class="btn-again" id="again-btn">重新测试</button>' +
+      "</div>" +
+      "</div>";
+
+    // 条形图动画
+    setTimeout(function () {
+      stage.querySelectorAll(".fill").forEach(function (f) {
+        f.style.width = f.dataset.w + "%";
+      });
+    }, 60);
+
+    document.getElementById("copy-btn").addEventListener("click", function () {
+      var text = document.getElementById("share-text").textContent;
+      copyText(text);
+    });
+    document.getElementById("again-btn").addEventListener("click", renderIntro);
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        toast("文案已复制，快去分享吧");
+      }, function () {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); toast("文案已复制，快去分享吧"); }
+    catch (e) { toast("复制失败，请手动选择复制"); }
+    document.body.removeChild(ta);
+  }
+
+  renderIntro();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>24 小时跟进接力赛 · 外贸工具箱</title>
+<style>
+  :root {
+    --bg: #12182E;
+    --bg-2: #1A2340;
+    --panel: rgba(26, 35, 64, 0.82);
+    --line: rgba(180, 200, 240, 0.14);
+    --gold: #F0C75E;
+    --cyan: #53D3C3;
+    --text: #EAEFFA;
+    --text-2: #93A0BE;
+    --dim: #3E4763;
+    --play: #F0C75E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1100px 700px at 20% -10%, #1B2850 0%, rgba(27,40,80,0) 55%),
+      radial-gradient(900px 600px at 110% 110%, #0F1B38 0%, rgba(15,27,56,0) 50%),
+      #0E1428;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 40px 28px 18px;
+  }
+  .kicker {
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 34px; font-weight: 700; letter-spacing: 0.02em; }
+  .sub { margin-top: 8px; color: var(--text-2); font-size: 15px; line-height: 1.6; }
+  .control-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+  .btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .btn.primary {
+    background: var(--play);
+    border-color: var(--play);
+    color: #12182E;
+    font-weight: 700;
+    min-width: 88px;
+  }
+  .btn.primary:hover { background: #F8D77E; color: #12182E; }
+  .btn-group { display: flex; gap: 6px; }
+  .btn-group .btn.speed { padding: 8px 12px; }
+  .btn.speed.active { border-color: var(--cyan); color: var(--cyan); background: rgba(83,211,195,0.12); }
+  .clock {
+    margin-left: auto;
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+  }
+  .clock small {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-2);
+    letter-spacing: 0.1em;
+    text-align: right;
+  }
+  main {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 18px 28px 40px;
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+  }
+  .map-wrap {
+    position: relative;
+    flex: 1;
+    background: #0E1730;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  #map { display: block; width: 100%; height: auto; }
+  .continent {
+    fill: #16224A;
+    stroke: rgba(200, 215, 255, 0.10);
+    stroke-width: 0.8;
+  }
+  .client-node circle { transition: fill 0.6s ease; }
+  .client-node .halo { animation: breathe 2.8s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.12; }
+  }
+  .legend {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    gap: 14px;
+    background: rgba(14, 23, 48, 0.85);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  aside {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  aside h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  aside .hint { font-size: 12px; color: var(--text-2); line-height: 1.6; margin-bottom: 14px; }
+  .timeline {
+    width: 100%;
+    margin: 6px 0 4px;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--dim) 0%, var(--dim) 37.5%, var(--gold) 37.5%, var(--gold) 50%, var(--cyan) 50%, var(--cyan) 75%, var(--dim) 75%, var(--dim) 100%);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #F5F8FF;
+    border: 3px solid var(--cyan);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #F5F8FF;
+    border: 3px solid var(--cyan);
+    cursor: pointer;
+  }
+  .tick-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-2);
+    margin-top: 4px;
+  }
+  .rec-list { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .rec-list h3 {
+    font-size: 13px;
+    color: var(--text-2);
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .rec-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(240, 199, 94, 0.28);
+    background: rgba(240, 199, 94, 0.07);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .rec-item b { font-weight: 600; }
+  .rec-item .t { color: var(--gold); font-variant-numeric: tabular-nums; }
+  .rec-item .act { color: var(--text-2); font-size: 12px; }
+  .rec-empty {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.7;
+    background: rgba(120, 130, 170, 0.08);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .work-stats {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .work-stat {
+    flex: 1;
+    background: rgba(14, 23, 48, 0.6);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .work-stat b { display: block; font-size: 20px; }
+  .work-stat b.g { color: var(--gold); }
+  .work-stat b.c { color: var(--cyan); }
+  .work-stat span { font-size: 11px; color: var(--text-2); }
+  @media (max-width: 900px) {
+    main { flex-direction: column; }
+    aside { width: 100%; }
+    .clock { margin-left: 0; }
+  }
+  @media (max-width: 480px) {
+    header { padding: 28px 18px 14px; }
+    main { padding: 14px 18px 32px; }
+    h1 { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Foreign Trade Toolkit · 02</div>
+  <h1>24 小时跟进接力赛</h1>
+  <p class="sub">地球转一圈，全球客户接力上班。拖动时间轴看每个时区的客户何时进入黄金跟进窗口。</p>
+  <div class="control-bar">
+    <button class="btn primary" id="play-btn">播放</button>
+    <button class="btn" id="now-btn">切到当前时间</button>
+    <div class="btn-group" id="speed-group">
+      <button class="btn speed active" data-speed="1">1x</button>
+      <button class="btn speed" data-speed="2">2x</button>
+      <button class="btn speed" data-speed="4">4x</button>
+    </div>
+    <div class="clock" id="clock">00:00<small>世界时 UTC</small></div>
+  </div>
+</header>
+
+<main>
+  <div class="map-wrap">
+    <svg id="map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" aria-label="全球客户接力地图"></svg>
+    <div class="legend">
+      <span><i style="background:#F0C75E"></i>黄金跟进（9-12点）</span>
+      <span><i style="background:#53D3C3"></i>工作时间（12-18点）</span>
+      <span><i style="background:#3E4763"></i>休息中</span>
+    </div>
+  </div>
+  <aside>
+    <h2>跟进时刻表</h2>
+    <p class="hint">世界时推进，各时区客户的状态随之切换。黄金时段的客户最值得优先联系。</p>
+    <div class="timeline">
+      <input type="range" id="timeline" min="0" max="24" step="0.05" value="8">
+      <div class="tick-labels"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+    </div>
+    <div class="work-stats">
+      <div class="work-stat"><b class="g" id="st-gold">0</b><span>黄金跟进</span></div>
+      <div class="work-stat"><b class="c" id="st-work">0</b><span>工作中</span></div>
+    </div>
+    <div class="rec-list">
+      <h3>此刻建议优先跟进</h3>
+      <div id="rec-box"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var CONTINENTS = [
+    { name: "north-america", pts: [[-168,65],[-160,59],[-152,58],[-142,60],[-132,55],[-128,50],[-124,44],[-122,37],[-117,33],[-112,28],[-106,23],[-100,20],[-97,16],[-92,15],[-88,19],[-83,9],[-79,9],[-77,7],[-78,4],[-81,11],[-80,23],[-80,27],[-82,30],[-80,34],[-76,37],[-75,39],[-70,42],[-65,44],[-62,46],[-58,49],[-55,52],[-57,55],[-60,58],[-66,60],[-72,62],[-78,63],[-82,66],[-90,68],[-100,71],[-110,70],[-120,72],[-130,70],[-140,70],[-150,71],[-160,70],[-165,68],[-168,65]] },
+    { name: "greenland", pts: [[-44,60],[-52,65],[-46,72],[-38,76],[-28,78],[-20,74],[-24,70],[-35,66],[-44,60]] },
+    { name: "south-america", pts: [[-78,8],[-77,4],[-76,1],[-80,-2],[-81,-5],[-77,-9],[-72,-15],[-70,-21],[-70,-27],[-70,-34],[-73,-40],[-74,-47],[-71,-52],[-68,-55],[-65,-54],[-60,-52],[-58,-44],[-57,-38],[-56,-34],[-53,-31],[-48,-27],[-44,-22],[-39,-15],[-35,-8],[-36,-2],[-41,2],[-45,0],[-49,-1],[-51,3],[-55,6],[-60,8],[-65,10],[-71,12],[-76,10],[-78,8]] },
+    { name: "europe", pts: [[-9,43],[-9,37],[-6,36],[-1,37],[3,40],[4,43],[8,44],[12,45],[14,41],[18,40],[21,38],[23,37],[26,39],[29,41],[28,44],[30,46],[28,48],[30,50],[33,51],[36,53],[40,55],[44,59],[48,64],[42,68],[38,70],[33,71],[28,71],[24,70],[20,69],[15,68],[11,64],[6,62],[5,59],[8,57],[8,55],[7,53],[5,52],[2,51],[-2,49],[-5,48],[-3,46],[0,44],[-3,43],[-9,43]] },
+    { name: "uk", pts: [[-5,50],[-3,51],[-1,52],[0,54],[1,54],[-1,57],[-3,57],[-5,55],[-5,50]] },
+    { name: "africa", pts: [[-17,15],[-17,20],[-15,23],[-12,27],[-9,30],[-6,34],[-2,35],[2,37],[8,37],[11,33],[14,32],[20,32],[25,32],[29,31],[32,31],[34,28],[34,24],[37,22],[40,18],[43,12],[48,10],[51,11],[48,7],[45,3],[43,-1],[41,-6],[40,-11],[37,-16],[35,-22],[33,-26],[30,-32],[27,-34],[23,-35],[19,-35],[16,-33],[14,-27],[12,-19],[10,-10],[9,-3],[9,1],[7,4],[3,6],[-3,5],[-8,4],[-12,7],[-16,11],[-17,15]] },
+    { name: "madagascar", pts: [[49,-12],[50,-15],[49,-19],[46,-23],[44,-25],[43,-21],[45,-17],[47,-14],[49,-12]] },
+    { name: "asia", pts: [[28,44],[36,49],[42,54],[47,60],[54,66],[62,70],[70,72],[80,74],[90,75],[100,74],[110,73],[120,72],[130,71],[140,70],[150,70],[160,69],[168,67],[178,65],[178,62],[170,61],[162,58],[155,54],[150,57],[146,60],[142,57],[138,52],[139,47],[142,44],[141,41],[138,37],[135,34],[131,32],[126,34],[123,37],[120,33],[118,28],[115,23],[112,20],[109,16],[107,12],[104,5],[101,1],[99,7],[97,13],[94,18],[89,21],[85,17],[81,13],[80,10],[76,13],[74,17],[72,21],[70,24],[66,25],[62,25],[58,26],[55,25],[52,27],[49,29],[45,30],[41,32],[37,36],[34,35],[31,33],[32,30],[35,28],[38,24],[40,19],[44,13],[49,13],[52,16],[56,22],[60,25],[59,27],[55,27],[52,29],[48,31],[44,33],[40,35],[36,37],[32,37],[28,44]] },
+    { name: "japan", pts: [[140,44],[141,42],[140,39],[138,36],[134,33],[131,32],[132,35],[136,38],[139,42],[140,44]] },
+    { name: "borneo", pts: [[109,1],[112,3],[116,4],[118,2],[116,-1],[112,-2],[109,0],[109,1]] },
+    { name: "sumatra", pts: [[95,5],[100,1],[103,2],[100,3],[96,6],[95,5]] },
+    { name: "java", pts: [[105,-6],[109,-7],[113,-7],[114,-8],[110,-8],[106,-7],[105,-6]] },
+    { name: "new-guinea", pts: [[131,-1],[136,-2],[141,-3],[144,-5],[143,-8],[139,-8],[134,-7],[131,-4],[131,-1]] },
+    { name: "philippines", pts: [[120,18],[122,17],[124,14],[126,11],[125,8],[122,10],[120,14],[120,18]] },
+    { name: "australia", pts: [[114,-22],[113,-27],[114,-32],[118,-35],[125,-35],[132,-33],[138,-36],[143,-39],[147,-38],[150,-36],[152,-29],[153,-25],[149,-22],[145,-18],[143,-14],[141,-11],[137,-12],[132,-12],[127,-13],[122,-15],[117,-18],[114,-22]] },
+    { name: "new-zealand", pts: [[172,-34],[174,-37],[173,-41],[170,-44],[167,-46],[166,-44],[169,-41],[171,-36],[172,-34]] }
+  ];
+
+  var CLIENTS = [
+    { name: "纽约 · Michael", offset: -5, lon: -74.0, lat: 40.7 },
+    { name: "洛杉矶 · Sarah", offset: -8, lon: -118.2, lat: 34.1 },
+    { name: "伦敦 · Emma", offset: 0, lon: -0.1, lat: 51.5 },
+    { name: "汉堡 · Lena", offset: 1, lon: 10.0, lat: 53.6 },
+    { name: "开罗 · Omar", offset: 2, lon: 31.2, lat: 30.0 },
+    { name: "拉各斯 · Chinedu", offset: 1, lon: 3.4, lat: 6.5 },
+    { name: "迪拜 · Ahmed", offset: 4, lon: 55.3, lat: 25.3 },
+    { name: "孟买 · Arjun", offset: 5.5, lon: 72.9, lat: 19.1 },
+    { name: "新加坡 · Wei Lin", offset: 8, lon: 103.8, lat: 1.35 },
+    { name: "悉尼 · Jack", offset: 10, lon: 151.2, lat: -33.9 },
+    { name: "圣保罗 · Rafael", offset: -3, lon: -46.6, lat: -23.6 }
+  ];
+
+  var NS = "http://www.w3.org/2000/svg";
+  var map = document.getElementById("map");
+  var timeline = document.getElementById("timeline");
+  var clock = document.getElementById("clock");
+  var recBox = document.getElementById("rec-box");
+
+  var timeH = 8;          // 模拟世界时（UTC 小时，含小数）
+  var playing = false;
+  var speed = 1;
+  var tickMs = 90;
+
+  function project(lon, lat) {
+    return { x: (lon + 180) / 360 * 1000, y: (90 - lat) / 180 * 500 };
+  }
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS(NS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function fmt(h) {
+    h = ((h % 24) + 24) % 24;
+    var hh = Math.floor(h);
+    var mm = Math.floor((h - hh) * 60);
+    return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+  }
+  function localHourOf(c) {
+    return ((timeH + c.offset + 24) % 24);
+  }
+  function statusOf(h) {
+    if (h >= 9 && h < 12) return "gold";
+    if (h >= 12 && h < 18) return "work";
+    return "dim";
+  }
+  var STATUS_COLOR = { gold: "#F0C75E", work: "#53D3C3", dim: "#3E4763" };
+  var STATUS_ACTION = {
+    gold: "黄金窗口，优先邮件 + 电话",
+    work: "工作时间，适合报价与跟进",
+    dim: "休息中，等待当地上午再联系"
+  };
+
+  function renderMap() {
+    var g = svgEl("g", {});
+    CONTINENTS.forEach(function (c) {
+      var pts = c.pts.map(function (p) {
+        var q = project(p[0], p[1]);
+        return q.x.toFixed(1) + "," + q.y.toFixed(1);
+      }).join(" ");
+      g.appendChild(svgEl("polygon", { points: pts, class: "continent" }));
+    });
+    CLIENTS.forEach(function (c) {
+      var p = project(c.lon, c.lat);
+      var st = statusOf(localHourOf(c));
+      var node = svgEl("g", { class: "client-node", transform: "translate(" + p.x.toFixed(1) + "," + p.y.toFixed(1) + ")" });
+      var halo = svgEl("circle", { class: "halo", r: 12, fill: "none", stroke: STATUS_COLOR[st], "stroke-width": 1.3 });
+      var dot = svgEl("circle", { class: "dot", r: 5.5, fill: STATUS_COLOR[st], stroke: "#0E1730", "stroke-width": 1.5 });
+      node.appendChild(halo);
+      node.appendChild(dot);
+      g.appendChild(node);
+    });
+    map.replaceChildren(g);
+  }
+
+  function renderRec() {
+    var gold = [];
+    var work = [];
+    CLIENTS.forEach(function (c) {
+      var h = localHourOf(c);
+      var st = statusOf(h);
+      if (st === "gold") gold.push({ c: c, h: h });
+      else if (st === "work") work.push({ c: c, h: h });
+    });
+    document.getElementById("st-gold").textContent = gold.length;
+    document.getElementById("st-work").textContent = work.length;
+
+    var html = "";
+    if (gold.length === 0) {
+      html = "<div class='rec-empty'>此刻没有客户处于黄金时段。点击「切到当前时间」，或拖动时间轴观察一天中客户的接力节奏。</div>";
+    } else {
+      gold.sort(function (a, b) { return a.h - b.h; });
+      gold.forEach(function (g) {
+        html += "<div class='rec-item'><div><b>" + g.c.name + "</b><div class='act'>" + STATUS_ACTION.gold + "</div></div><span class='t'>" + fmt(g.h) + "</span></div>";
+      });
+    }
+    recBox.innerHTML = html;
+  }
+
+  function renderClock() {
+    clock.innerHTML = fmt(timeH) + "<small>世界时 UTC</small>";
+  }
+
+  function render() {
+    renderMap();
+    renderRec();
+    renderClock();
+    timeline.value = timeH;
+  }
+
+  /* ===== 时间推进 ===== */
+  var timer = null;
+  function tick() {
+    timeH += 0.02 * speed;
+    if (timeH >= 24) timeH -= 24;
+    render();
+  }
+  function start() {
+    if (timer) return;
+    playing = true;
+    document.getElementById("play-btn").textContent = "暂停";
+    timer = setInterval(tick, tickMs);
+  }
+  function stop() {
+    playing = false;
+    document.getElementById("play-btn").textContent = "播放";
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+  document.getElementById("play-btn").addEventListener("click", function () {
+    if (playing) stop(); else start();
+  });
+  document.getElementById("now-btn").addEventListener("click", function () {
+    stop();
+    var now = new Date();
+    timeH = now.getUTCHours() + now.getUTCMinutes() / 60;
+    render();
+  });
+  timeline.addEventListener("input", function () {
+    stop();
+    timeH = Number(timeline.value);
+    render();
+  });
+  var speedBtns = document.querySelectorAll("#speed-group .speed");
+  speedBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      speed = Number(b.dataset.speed);
+      speedBtns.forEach(function (x) { x.classList.remove("active"); });
+      b.classList.add("active");
+    });
+  });
+
+  /* 初始化：定位到当前真实世界时 */
+  var now = new Date();
+  timeH = now.getUTCHours() + now.getUTCMinutes() / 60;
+  render();
+})();
+</script>
+</body>
+</html>

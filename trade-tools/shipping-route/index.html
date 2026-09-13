@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海运路线动画 · 外贸工具箱</title>
+<style>
+  :root {
+    --bg: #081B2E;
+    --bg-2: #0F2A45;
+    --panel: rgba(15, 42, 69, 0.82);
+    --line: rgba(150, 200, 240, 0.16);
+    --blue: #38BDF8;
+    --blue-2: #7DD3FC;
+    --gold: #F0C75E;
+    --text: #EAF2FA;
+    --text-2: #8FA9C4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1100px 700px at 80% -10%, #103049 0%, rgba(16,48,73,0) 55%),
+      radial-gradient(900px 600px at -10% 110%, #0C2842 0%, rgba(12,40,66,0) 50%),
+      #061523;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 40px 28px 18px;
+  }
+  .kicker {
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    color: var(--blue);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 34px; font-weight: 700; letter-spacing: 0.02em; }
+  .sub { margin-top: 8px; color: var(--text-2); font-size: 15px; line-height: 1.6; }
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .field { flex: 1; min-width: 180px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+  select {
+    width: 100%;
+    background: #0A2038;
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  select:focus { border-color: var(--blue); }
+  .btn {
+    background: var(--blue);
+    color: #061523;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--blue-2); }
+  .btn.ghost {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text-2);
+    font-weight: 500;
+  }
+  .btn.ghost:hover { border-color: var(--blue); color: var(--blue); }
+  main {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 18px 28px 40px;
+  }
+  .map-wrap {
+    position: relative;
+    background: #07192B;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  #map { display: block; width: 100%; height: auto; }
+  .continent {
+    fill: #12304D;
+    stroke: rgba(160, 210, 250, 0.12);
+    stroke-width: 0.8;
+  }
+  .port-dot { pointer-events: none; }
+  .port-label {
+    font-size: 10px;
+    fill: var(--text-2);
+    pointer-events: none;
+  }
+  .route-line {
+    fill: none;
+    stroke: url(#routeGrad);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-dasharray: 6 8;
+    animation: dashFlow 1.4s linear infinite;
+  }
+  @keyframes dashFlow { to { stroke-dashoffset: -14; } }
+  .ship-wrap { pointer-events: none; }
+  .ship {
+    fill: var(--gold);
+    stroke: #061523;
+    stroke-width: 1.2;
+  }
+  .ship-halo { fill: none; stroke: rgba(240,199,94,0.5); }
+  .hint-overlay {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(6, 25, 43, 0.85);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .panel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .card .cap {
+    font-size: 12px;
+    color: var(--text-2);
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .card .num {
+    font-size: 30px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--blue-2);
+    line-height: 1.15;
+  }
+  .card .num small { font-size: 14px; color: var(--text-2); font-weight: 500; }
+  .card .note { font-size: 11px; color: var(--text-2); margin-top: 6px; line-height: 1.5; }
+  .box-select {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .box-btn {
+    flex: 1;
+    background: rgba(6, 25, 43, 0.6);
+    border: 1px solid var(--line);
+    color: var(--text-2);
+    border-radius: 8px;
+    padding: 10px 6px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+  }
+  .box-btn.active {
+    border-color: var(--blue);
+    color: var(--blue-2);
+    background: rgba(56, 189, 248, 0.12);
+  }
+  .card.fee .num { color: var(--gold); }
+  .status-line {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  .status-line b { color: var(--blue-2); font-weight: 600; }
+  @media (max-width: 760px) {
+    .panel { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    header { padding: 28px 18px 14px; }
+    main { padding: 14px 18px 32px; }
+    h1 { font-size: 26px; }
+    .field { min-width: 46%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Foreign Trade Toolkit · 03</div>
+  <h1>海运路线动画</h1>
+  <p class="sub">选择起运港与目的港，查看货船航线动画与航程、运费估算。</p>
+  <div class="controls">
+    <div class="field">
+      <label for="from">起运港</label>
+      <select id="from"></select>
+    </div>
+    <div class="field">
+      <label for="to">目的港</label>
+      <select id="to"></select>
+    </div>
+    <button class="btn" id="go-btn">计算航线</button>
+    <button class="btn ghost" id="again-btn">重新航行</button>
+  </div>
+</header>
+
+<main>
+  <div class="map-wrap">
+    <svg id="map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" aria-label="海运航线地图">
+      <defs>
+        <linearGradient id="routeGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#38BDF8"/>
+          <stop offset="1" stop-color="#7DD3FC"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div class="hint-overlay">港口可点击：金色为当前选择的起运 / 目的港</div>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <div class="cap">航线距离</div>
+      <div class="num" id="dist-km">--</div>
+      <div class="note" id="dist-nm">大圆距离（haversine 计算）</div>
+    </div>
+    <div class="card">
+      <div class="cap">预估航程</div>
+      <div class="num" id="days">--</div>
+      <div class="note">按集装箱货船平均航速 20 节（约 37 km/h）估算</div>
+    </div>
+    <div class="card fee">
+      <div class="cap">运费估算</div>
+      <div class="num" id="fee">--</div>
+      <div class="box-select" id="box-group">
+        <button class="box-btn active" data-box="20GP">20GP</button>
+        <button class="box-btn" data-box="40GP">40GP</button>
+        <button class="box-btn" data-box="40HQ">40HQ</button>
+      </div>
+    </div>
+  </div>
+  <div class="status-line" id="status">选择起运港与目的港，点击「计算航线」开始。</div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var CONTINENTS = [
+    { name: "north-america", pts: [[-168,65],[-160,59],[-152,58],[-142,60],[-132,55],[-128,50],[-124,44],[-122,37],[-117,33],[-112,28],[-106,23],[-100,20],[-97,16],[-92,15],[-88,19],[-83,9],[-79,9],[-77,7],[-78,4],[-81,11],[-80,23],[-80,27],[-82,30],[-80,34],[-76,37],[-75,39],[-70,42],[-65,44],[-62,46],[-58,49],[-55,52],[-57,55],[-60,58],[-66,60],[-72,62],[-78,63],[-82,66],[-90,68],[-100,71],[-110,70],[-120,72],[-130,70],[-140,70],[-150,71],[-160,70],[-165,68],[-168,65]] },
+    { name: "greenland", pts: [[-44,60],[-52,65],[-46,72],[-38,76],[-28,78],[-20,74],[-24,70],[-35,66],[-44,60]] },
+    { name: "south-america", pts: [[-78,8],[-77,4],[-76,1],[-80,-2],[-81,-5],[-77,-9],[-72,-15],[-70,-21],[-70,-27],[-70,-34],[-73,-40],[-74,-47],[-71,-52],[-68,-55],[-65,-54],[-60,-52],[-58,-44],[-57,-38],[-56,-34],[-53,-31],[-48,-27],[-44,-22],[-39,-15],[-35,-8],[-36,-2],[-41,2],[-45,0],[-49,-1],[-51,3],[-55,6],[-60,8],[-65,10],[-71,12],[-76,10],[-78,8]] },
+    { name: "europe", pts: [[-9,43],[-9,37],[-6,36],[-1,37],[3,40],[4,43],[8,44],[12,45],[14,41],[18,40],[21,38],[23,37],[26,39],[29,41],[28,44],[30,46],[28,48],[30,50],[33,51],[36,53],[40,55],[44,59],[48,64],[42,68],[38,70],[33,71],[28,71],[24,70],[20,69],[15,68],[11,64],[6,62],[5,59],[8,57],[8,55],[7,53],[5,52],[2,51],[-2,49],[-5,48],[-3,46],[0,44],[-3,43],[-9,43]] },
+    { name: "uk", pts: [[-5,50],[-3,51],[-1,52],[0,54],[1,54],[-1,57],[-3,57],[-5,55],[-5,50]] },
+    { name: "africa", pts: [[-17,15],[-17,20],[-15,23],[-12,27],[-9,30],[-6,34],[-2,35],[2,37],[8,37],[11,33],[14,32],[20,32],[25,32],[29,31],[32,31],[34,28],[34,24],[37,22],[40,18],[43,12],[48,10],[51,11],[48,7],[45,3],[43,-1],[41,-6],[40,-11],[37,-16],[35,-22],[33,-26],[30,-32],[27,-34],[23,-35],[19,-35],[16,-33],[14,-27],[12,-19],[10,-10],[9,-3],[9,1],[7,4],[3,6],[-3,5],[-8,4],[-12,7],[-16,11],[-17,15]] },
+    { name: "madagascar", pts: [[49,-12],[50,-15],[49,-19],[46,-23],[44,-25],[43,-21],[45,-17],[47,-14],[49,-12]] },
+    { name: "asia", pts: [[28,44],[36,49],[42,54],[47,60],[54,66],[62,70],[70,72],[80,74],[90,75],[100,74],[110,73],[120,72],[130,71],[140,70],[150,70],[160,69],[168,67],[178,65],[178,62],[170,61],[162,58],[155,54],[150,57],[146,60],[142,57],[138,52],[139,47],[142,44],[141,41],[138,37],[135,34],[131,32],[126,34],[123,37],[120,33],[118,28],[115,23],[112,20],[109,16],[107,12],[104,5],[101,1],[99,7],[97,13],[94,18],[89,21],[85,17],[81,13],[80,10],[76,13],[74,17],[72,21],[70,24],[66,25],[62,25],[58,26],[55,25],[52,27],[49,29],[45,30],[41,32],[37,36],[34,35],[31,33],[32,30],[35,28],[38,24],[40,19],[44,13],[49,13],[52,16],[56,22],[60,25],[59,27],[55,27],[52,29],[48,31],[44,33],[40,35],[36,37],[32,37],[28,44]] },
+    { name: "japan", pts: [[140,44],[141,42],[140,39],[138,36],[134,33],[131,32],[132,35],[136,38],[139,42],[140,44]] },
+    { name: "borneo", pts: [[109,1],[112,3],[116,4],[118,2],[116,-1],[112,-2],[109,0],[109,1]] },
+    { name: "sumatra", pts: [[95,5],[100,1],[103,2],[100,3],[96,6],[95,5]] },
+    { name: "java", pts: [[105,-6],[109,-7],[113,-7],[114,-8],[110,-8],[106,-7],[105,-6]] },
+    { name: "new-guinea", pts: [[131,-1],[136,-2],[141,-3],[144,-5],[143,-8],[139,-8],[134,-7],[131,-4],[131,-1]] },
+    { name: "philippines", pts: [[120,18],[122,17],[124,14],[126,11],[125,8],[122,10],[120,14],[120,18]] },
+    { name: "australia", pts: [[114,-22],[113,-27],[114,-32],[118,-35],[125,-35],[132,-33],[138,-36],[143,-39],[147,-38],[150,-36],[152,-29],[153,-25],[149,-22],[145,-18],[143,-14],[141,-11],[137,-12],[132,-12],[127,-13],[122,-15],[117,-18],[114,-22]] },
+    { name: "new-zealand", pts: [[172,-34],[174,-37],[173,-41],[170,-44],[167,-46],[166,-44],[169,-41],[171,-36],[172,-34]] }
+  ];
+
+  var PORTS = [
+    { name: "上海", country: "中国", lon: 121.5, lat: 31.2 },
+    { name: "宁波", country: "中国", lon: 121.5, lat: 29.9 },
+    { name: "深圳", country: "中国", lon: 114.1, lat: 22.5 },
+    { name: "青岛", country: "中国", lon: 120.3, lat: 36.1 },
+    { name: "香港", country: "中国香港", lon: 114.2, lat: 22.3 },
+    { name: "新加坡", country: "新加坡", lon: 103.8, lat: 1.3 },
+    { name: "迪拜", country: "阿联酋", lon: 55.3, lat: 25.3 },
+    { name: "孟买", country: "印度", lon: 72.9, lat: 18.9 },
+    { name: "汉堡", country: "德国", lon: 9.9, lat: 53.6 },
+    { name: "鹿特丹", country: "荷兰", lon: 4.5, lat: 51.9 },
+    { name: "洛杉矶", country: "美国", lon: -118.3, lat: 33.7 },
+    { name: "长滩", country: "美国", lon: -118.2, lat: 33.8 },
+    { name: "纽约", country: "美国", lon: -74.0, lat: 40.7 },
+    { name: "桑托斯", country: "巴西", lon: -46.3, lat: -24.0 },
+    { name: "拉各斯", country: "尼日利亚", lon: 3.4, lat: 6.4 },
+    { name: "悉尼", country: "澳大利亚", lon: 151.2, lat: -33.9 }
+  ];
+
+  var NS = "http://www.w3.org/2000/svg";
+  var map = document.getElementById("map");
+  var fromSel = document.getElementById("from");
+  var toSel = document.getElementById("to");
+  var boxType = "20GP";
+  var routePath = null;
+  var shipWrap = null;
+
+  function project(lon, lat) {
+    return { x: (lon + 180) / 360 * 1000, y: (90 - lat) / 180 * 500 };
+  }
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS(NS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+  function portOf(name) {
+    for (var i = 0; i < PORTS.length; i++) if (PORTS[i].name === name) return PORTS[i];
+    return PORTS[0];
+  }
+  function fmtInt(n) { return Math.round(n).toLocaleString("zh-CN"); }
+  function feeFor(km, box) {
+    var base = { "20GP": 800, "40GP": 1000, "40HQ": 1100 };
+    var coef = { "20GP": 0.018, "40GP": 0.024, "40HQ": 0.027 };
+    return Math.round((base[box] + km * coef[box]) / 10) * 10;
+  }
+
+  /* ===== 地图基础层 ===== */
+  function renderBase() {
+    var g = svgEl("g", {});
+    CONTINENTS.forEach(function (c) {
+      var pts = c.pts.map(function (p) {
+        var q = project(p[0], p[1]);
+        return q.x.toFixed(1) + "," + q.y.toFixed(1);
+      }).join(" ");
+      g.appendChild(svgEl("polygon", { points: pts, class: "continent" }));
+    });
+    map.appendChild(g);
+  }
+
+  function renderPorts(fromName, toName) {
+    var g = svgEl("g", {});
+    PORTS.forEach(function (p) {
+      var q = project(p.lon, p.lat);
+      var isSel = (p.name === fromName || p.name === toName);
+      g.appendChild(svgEl("circle", {
+        cx: q.x.toFixed(1), cy: q.y.toFixed(1), r: isSel ? 5 : 3.5,
+        fill: isSel ? "#F0C75E" : "#38BDF8",
+        stroke: "#07192B", "stroke-width": 1.4, class: "port-dot"
+      }));
+      if (isSel) {
+        var label = svgEl("text", {
+          x: (q.x + 8).toFixed(1), y: (q.y - 6).toFixed(1), class: "port-label"
+        });
+        label.textContent = p.name;
+        g.appendChild(label);
+      }
+    });
+    map.appendChild(g);
+  }
+
+  /* ===== 航线 ===== */
+  function drawRoute(fromP, toP) {
+    var a = project(fromP.lon, fromP.lat);
+    var b = project(toP.lon, toP.lat);
+    var mx = (a.x + b.x) / 2;
+    var my = (a.y + b.y) / 2;
+    var dist = Math.sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y));
+    var bend = Math.min(70, Math.max(18, dist * 0.10));
+    var cy = my - bend;
+    var d = "M " + a.x.toFixed(1) + " " + a.y.toFixed(1) +
+            " Q " + mx.toFixed(1) + " " + cy.toFixed(1) +
+            " " + b.x.toFixed(1) + " " + b.y.toFixed(1);
+
+    var path = svgEl("path", { d: d, class: "route-line", id: "routePath" });
+    map.appendChild(path);
+    routePath = path;
+
+    // 货船
+    shipWrap = svgEl("g", { class: "ship-wrap" });
+    var halo = svgEl("circle", { class: "ship-halo", r: 10, cx: 0, cy: 0 });
+    var ship = svgEl("circle", { class: "ship", r: 6, cx: 0, cy: 0 });
+    shipWrap.appendChild(halo);
+    shipWrap.appendChild(ship);
+    map.appendChild(shipWrap);
+    animateShip(path, shipWrap);
+  }
+
+  var shipAnim = null;
+  function stopShip() {
+    if (shipAnim) { cancelAnimationFrame(shipAnim); shipAnim = null; }
+  }
+  function animateShip(path, wrap) {
+    stopShip();
+    var len = path.getTotalLength();
+    var dur = 9000;
+    var start = null;
+    function frame(ts) {
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var pt = path.getPointAtLength(len * t);
+      wrap.setAttribute("transform", "translate(" + pt.x.toFixed(1) + "," + pt.y.toFixed(1) + ")");
+      if (t < 1) { shipAnim = requestAnimationFrame(frame); }
+      else { shipAnim = null; }
+    }
+    shipAnim = requestAnimationFrame(frame);
+  }
+  function clearRoute() {
+    stopShip();
+    var old = document.getElementById("routePath");
+    if (old) old.remove();
+    if (shipWrap) shipWrap.remove();
+    shipWrap = null;
+    routePath = null;
+  }
+
+  function recalc() {
+    clearRoute();
+    var fromP = portOf(fromSel.value);
+    var toP = portOf(toSel.value);
+    // 重建港口高亮
+    var dots = map.querySelectorAll(".port-dot, .port-label");
+    dots.forEach(function (n) { n.remove(); });
+    renderPorts(fromP.name, toP.name);
+
+    if (fromP.name === toP.name) {
+      document.getElementById("dist-km").textContent = "--";
+      document.getElementById("dist-nm").textContent = "请选择不同的起运港与目的港";
+      document.getElementById("days").textContent = "--";
+      document.getElementById("fee").textContent = "--";
+      document.getElementById("status").innerHTML = "起运港与目的港相同，请重新选择。";
+      return;
+    }
+
+    var km = haversineKm(fromP.lat, fromP.lon, toP.lat, toP.lon);
+    var nm = km / 1.852;
+    var days = km / (37.04 * 24);
+    var fee = feeFor(km, boxType);
+
+    document.getElementById("dist-km").innerHTML = fmtInt(km) + " <small>km</small>";
+    document.getElementById("dist-nm").textContent = "约 " + fmtInt(nm) + " 海里";
+    document.getElementById("days").innerHTML = days.toFixed(1) + " <small>天</small>";
+    document.getElementById("fee").textContent = "$ " + fmtInt(fee);
+    document.getElementById("status").innerHTML =
+      "<b>" + fromP.name + "</b> → <b>" + toP.name + "</b> · " +
+      fmtInt(km) + " km · 预计 " + days.toFixed(1) + " 天 · " +
+      boxType + " 运费约 $" + fmtInt(fee) + "（估算参考，非实际报价）";
+
+    drawRoute(fromP, toP);
+  }
+
+  /* ===== 初始化 ===== */
+  PORTS.forEach(function (p) {
+    var o1 = document.createElement("option");
+    o1.value = p.name;
+    o1.textContent = p.name + " · " + p.country;
+    fromSel.appendChild(o1);
+    var o2 = document.createElement("option");
+    o2.value = p.name;
+    o2.textContent = p.name + " · " + p.country;
+    toSel.appendChild(o2);
+  });
+  fromSel.value = "上海";
+  toSel.value = "洛杉矶";
+
+  document.getElementById("go-btn").addEventListener("click", recalc);
+  document.getElementById("again-btn").addEventListener("click", function () {
+    clearRoute();
+    drawRoute(portOf(fromSel.value), portOf(toSel.value));
+  });
+  document.querySelectorAll("#box-group .box-btn").forEach(function (b) {
+    b.addEventListener("click", function () {
+      boxType = b.dataset.box;
+      document.querySelectorAll("#box-group .box-btn").forEach(function (x) { x.classList.remove("active"); });
+      b.classList.add("active");
+      if (fromSel.value !== toSel.value) recalc();
+    });
+  });
+
+  renderBase();
+  renderPorts("上海", "洛杉矶");
+  recalc();
+})();
+</script>
+</body>
+</html>

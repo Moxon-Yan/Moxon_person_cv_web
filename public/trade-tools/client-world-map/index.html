@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>客户世界地图 · 外贸工具箱</title>
+<style>
+  :root {
+    --bg: #0B1D33;
+    --bg-2: #0F2742;
+    --panel: rgba(15, 39, 66, 0.82);
+    --line: rgba(200, 220, 245, 0.14);
+    --gold: #C9A227;
+    --gold-2: #E3C565;
+    --text: #E8EEF5;
+    --text-2: #93A7C0;
+    --ok: #5ED6A5;
+    --off: #7C8AA0;
+    --danger: #D98B8B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1100px 700px at 75% -10%, #12304F 0%, rgba(18,48,79,0) 55%),
+      radial-gradient(900px 600px at -10% 110%, #0E2A47 0%, rgba(14,42,71,0) 50%),
+      #081527;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 40px 28px 22px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .kicker {
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .sub {
+    margin-top: 8px;
+    color: var(--text-2);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .stats {
+    display: flex;
+    gap: 14px;
+    margin-top: 22px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 20px;
+    min-width: 150px;
+  }
+  .stat b {
+    display: block;
+    font-size: 26px;
+    color: var(--gold-2);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .stat span {
+    font-size: 12px;
+    color: var(--text-2);
+    letter-spacing: 0.08em;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    gap: 18px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 28px 40px;
+    align-items: flex-start;
+  }
+  .map-wrap {
+    position: relative;
+    flex: 1;
+    background: #0A182C;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    min-height: 480px;
+  }
+  #map {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .continent {
+    fill: #16324F;
+    stroke: rgba(220, 235, 255, 0.10);
+    stroke-width: 0.8;
+  }
+  .client-node {
+    cursor: pointer;
+  }
+  .client-node circle {
+    transition: r 0.15s ease;
+  }
+  .client-node:hover circle.dot {
+    r: 9;
+  }
+  .client-halo {
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 0.15; }
+  }
+  #tooltip {
+    position: absolute;
+    pointer-events: auto;
+    background: rgba(8, 21, 39, 0.96);
+    border: 1px solid rgba(201, 162, 39, 0.45);
+    border-radius: 10px;
+    padding: 12px 14px;
+    min-width: 200px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 10;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  #tooltip.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  #tooltip .tt-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gold-2);
+    margin-bottom: 4px;
+  }
+  #tooltip .tt-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 3px;
+  }
+  #tooltip .tt-label { color: var(--text-2); }
+  #tooltip .tt-status { font-weight: 600; }
+  #tooltip .tt-status.on { color: var(--ok); }
+  #tooltip .tt-status.off { color: var(--off); }
+  #tooltip .tt-del {
+    margin-top: 10px;
+    background: none;
+    border: 1px solid rgba(217, 139, 139, 0.5);
+    color: var(--danger);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #tooltip .tt-del:hover { background: rgba(217, 139, 139, 0.12); }
+  aside {
+    width: 290px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  aside h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  aside .hint {
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-2);
+    margin: 12px 0 6px;
+    letter-spacing: 0.05em;
+  }
+  input, select {
+    width: 100%;
+    background: #0A182C;
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  input:focus, select:focus { border-color: var(--gold); }
+  button.add {
+    width: 100%;
+    margin-top: 16px;
+    background: var(--gold);
+    color: #10233C;
+    border: none;
+    border-radius: 8px;
+    padding: 11px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  button.add:hover { background: var(--gold-2); }
+  .clist {
+    margin-top: 18px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  .clist h3 {
+    font-size: 13px;
+    color: var(--text-2);
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .clist ul { list-style: none; }
+  .clist li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(200, 220, 245, 0.08);
+  }
+  .clist li button {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0 2px;
+  }
+  .note {
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  @media (max-width: 900px) {
+    main { flex-direction: column; }
+    aside { width: 100%; }
+    .map-wrap { min-height: 320px; }
+  }
+  @media (max-width: 480px) {
+    header { padding: 28px 18px 16px; }
+    main { padding: 0 18px 32px; }
+    h1 { font-size: 26px; }
+    .stat { min-width: 44%; }
+  }
+  /* ==== iframe 嵌入适配：容器通常窄于独立页面 ==== */
+  html, body { max-width: 100%; overflow-x: hidden; }
+  main, .map-wrap { min-width: 0; }
+  aside { width: min(290px, 100%); }
+  @media (max-width: 1080px) {
+    main { flex-direction: column; align-items: stretch; }
+    aside { width: 100%; }
+    .map-wrap { min-height: 360px; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Foreign Trade Toolkit · 01</div>
+  <h1>客户世界地图</h1>
+  <p class="sub">鼠标悬停客户节点，查看当地实时时间与跟进窗口——哪些客户此刻正处在工作时间，一目了然。</p>
+  <div class="stats">
+    <div class="stat"><b id="st-total">0</b><span>全球客户</span></div>
+    <div class="stat"><b id="st-countries">0</b><span>覆盖国家 / 地区</span></div>
+    <div class="stat"><b id="st-working">0</b><span>此刻正在工作</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="map-wrap">
+    <svg id="map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" aria-label="客户世界地图"></svg>
+    <div id="tooltip"></div>
+  </div>
+  <aside>
+    <h2>添加客户</h2>
+    <p class="hint">选择客户所在城市，节点将出现在地图对应位置，并实时计算当地时间。</p>
+    <label for="c-name">客户名称</label>
+    <input id="c-name" type="text" placeholder="如：John · 公司名" maxlength="30">
+    <label for="c-city">所在城市</label>
+    <select id="c-city"></select>
+    <button class="add" id="add-btn">添加客户</button>
+    <div class="clist">
+      <h3>客户列表（点击节点可查看 / 删除）</h3>
+      <ul id="c-list"></ul>
+    </div>
+    <p class="note">示例客户均为虚构数据，用于演示展示效果。客户数据保存在浏览器本地，不会上传。</p>
+  </aside>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ===== 世界地图：简化大陆轮廓（经纬度） ===== */
+  var CONTINENTS = [
+    { name: "north-america", pts: [[-168,65],[-160,59],[-152,58],[-142,60],[-132,55],[-128,50],[-124,44],[-122,37],[-117,33],[-112,28],[-106,23],[-100,20],[-97,16],[-92,15],[-88,19],[-83,9],[-79,9],[-77,7],[-78,4],[-81,11],[-80,23],[-80,27],[-82,30],[-80,34],[-76,37],[-75,39],[-70,42],[-65,44],[-62,46],[-58,49],[-55,52],[-57,55],[-60,58],[-66,60],[-72,62],[-78,63],[-82,66],[-90,68],[-100,71],[-110,70],[-120,72],[-130,70],[-140,70],[-150,71],[-160,70],[-165,68],[-168,65]] },
+    { name: "greenland", pts: [[-44,60],[-52,65],[-46,72],[-38,76],[-28,78],[-20,74],[-24,70],[-35,66],[-44,60]] },
+    { name: "south-america", pts: [[-78,8],[-77,4],[-76,1],[-80,-2],[-81,-5],[-77,-9],[-72,-15],[-70,-21],[-70,-27],[-70,-34],[-73,-40],[-74,-47],[-71,-52],[-68,-55],[-65,-54],[-60,-52],[-58,-44],[-57,-38],[-56,-34],[-53,-31],[-48,-27],[-44,-22],[-39,-15],[-35,-8],[-36,-2],[-41,2],[-45,0],[-49,-1],[-51,3],[-55,6],[-60,8],[-65,10],[-71,12],[-76,10],[-78,8]] },
+    { name: "europe", pts: [[-9,43],[-9,37],[-6,36],[-1,37],[3,40],[4,43],[8,44],[12,45],[14,41],[18,40],[21,38],[23,37],[26,39],[29,41],[28,44],[30,46],[28,48],[30,50],[33,51],[36,53],[40,55],[44,59],[48,64],[42,68],[38,70],[33,71],[28,71],[24,70],[20,69],[15,68],[11,64],[6,62],[5,59],[8,57],[8,55],[7,53],[5,52],[2,51],[-2,49],[-5,48],[-3,46],[0,44],[-3,43],[-9,43]] },
+    { name: "uk", pts: [[-5,50],[-3,51],[-1,52],[0,54],[1,54],[-1,57],[-3,57],[-5,55],[-5,50]] },
+    { name: "africa", pts: [[-17,15],[-17,20],[-15,23],[-12,27],[-9,30],[-6,34],[-2,35],[2,37],[8,37],[11,33],[14,32],[20,32],[25,32],[29,31],[32,31],[34,28],[34,24],[37,22],[40,18],[43,12],[48,10],[51,11],[48,7],[45,3],[43,-1],[41,-6],[40,-11],[37,-16],[35,-22],[33,-26],[30,-32],[27,-34],[23,-35],[19,-35],[16,-33],[14,-27],[12,-19],[10,-10],[9,-3],[9,1],[7,4],[3,6],[-3,5],[-8,4],[-12,7],[-16,11],[-17,15]] },
+    { name: "madagascar", pts: [[49,-12],[50,-15],[49,-19],[46,-23],[44,-25],[43,-21],[45,-17],[47,-14],[49,-12]] },
+    { name: "asia", pts: [[28,44],[36,49],[42,54],[47,60],[54,66],[62,70],[70,72],[80,74],[90,75],[100,74],[110,73],[120,72],[130,71],[140,70],[150,70],[160,69],[168,67],[178,65],[178,62],[170,61],[162,58],[155,54],[150,57],[146,60],[142,57],[138,52],[139,47],[142,44],[141,41],[138,37],[135,34],[131,32],[126,34],[123,37],[120,33],[118,28],[115,23],[112,20],[109,16],[107,12],[104,5],[101,1],[99,7],[97,13],[94,18],[89,21],[85,17],[81,13],[80,10],[76,13],[74,17],[72,21],[70,24],[66,25],[62,25],[58,26],[55,25],[52,27],[49,29],[45,30],[41,32],[37,36],[34,35],[31,33],[32,30],[35,28],[38,24],[40,19],[44,13],[49,13],[52,16],[56,22],[60,25],[59,27],[55,27],[52,29],[48,31],[44,33],[40,35],[36,37],[32,37],[28,44]] },
+    { name: "japan", pts: [[140,44],[141,42],[140,39],[138,36],[134,33],[131,32],[132,35],[136,38],[139,42],[140,44]] },
+    { name: "borneo", pts: [[109,1],[112,3],[116,4],[118,2],[116,-1],[112,-2],[109,0],[109,1]] },
+    { name: "sumatra", pts: [[95,5],[100,1],[103,2],[100,3],[96,6],[95,5]] },
+    { name: "java", pts: [[105,-6],[109,-7],[113,-7],[114,-8],[110,-8],[106,-7],[105,-6]] },
+    { name: "new-guinea", pts: [[131,-1],[136,-2],[141,-3],[144,-5],[143,-8],[139,-8],[134,-7],[131,-4],[131,-1]] },
+    { name: "philippines", pts: [[120,18],[122,17],[124,14],[126,11],[125,8],[122,10],[120,14],[120,18]] },
+    { name: "australia", pts: [[114,-22],[113,-27],[114,-32],[118,-35],[125,-35],[132,-33],[138,-36],[143,-39],[147,-38],[150,-36],[152,-29],[153,-25],[149,-22],[145,-18],[143,-14],[141,-11],[137,-12],[132,-12],[127,-13],[122,-15],[117,-18],[114,-22]] },
+    { name: "new-zealand", pts: [[172,-34],[174,-37],[173,-41],[170,-44],[167,-46],[166,-44],[169,-41],[171,-36],[172,-34]] }
+  ];
+
+  /* ===== 城市时区表 ===== */
+  var CITIES = [
+    { city: "纽约", country: "美国", tz: "America/New_York", lon: -74.0, lat: 40.7 },
+    { city: "洛杉矶", country: "美国", tz: "America/Los_Angeles", lon: -118.2, lat: 34.1 },
+    { city: "伦敦", country: "英国", tz: "Europe/London", lon: -0.1, lat: 51.5 },
+    { city: "汉堡", country: "德国", tz: "Europe/Berlin", lon: 10.0, lat: 53.6 },
+    { city: "巴黎", country: "法国", tz: "Europe/Paris", lon: 2.35, lat: 48.85 },
+    { city: "开罗", country: "埃及", tz: "Africa/Cairo", lon: 31.2, lat: 30.0 },
+    { city: "拉各斯", country: "尼日利亚", tz: "Africa/Lagos", lon: 3.4, lat: 6.5 },
+    { city: "内罗毕", country: "肯尼亚", tz: "Africa/Nairobi", lon: 36.8, lat: -1.3 },
+    { city: "迪拜", country: "阿联酋", tz: "Asia/Dubai", lon: 55.3, lat: 25.3 },
+    { city: "孟买", country: "印度", tz: "Asia/Kolkata", lon: 72.9, lat: 19.1 },
+    { city: "新加坡", country: "新加坡", tz: "Asia/Singapore", lon: 103.8, lat: 1.35 },
+    { city: "悉尼", country: "澳大利亚", tz: "Australia/Sydney", lon: 151.2, lat: -33.9 },
+    { city: "圣保罗", country: "巴西", tz: "America/Sao_Paulo", lon: -46.6, lat: -23.6 }
+  ];
+
+  /* ===== 示例客户 ===== */
+  var SAMPLE_CLIENTS = [
+    { name: "纽约 · Michael", city: "纽约" },
+    { name: "汉堡 · Lena", city: "汉堡" },
+    { name: "迪拜 · Ahmed", city: "迪拜" },
+    { name: "拉各斯 · Chinedu", city: "拉各斯" },
+    { name: "圣保罗 · Rafael", city: "圣保罗" },
+    { name: "新加坡 · Wei Lin", city: "新加坡" },
+    { name: "悉尼 · Jack", city: "悉尼" },
+    { name: "洛杉矶 · Sarah", city: "洛杉矶" },
+    { name: "孟买 · Arjun", city: "孟买" },
+    { name: "开罗 · Omar", city: "开罗" }
+  ];
+
+  var NS = "http://www.w3.org/2000/svg";
+  var map = document.getElementById("map");
+  var tooltip = document.getElementById("tooltip");
+  var clients = loadClients();
+
+  function loadClients() {
+    try {
+      var raw = localStorage.getItem("client-map-clients");
+      if (raw) {
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) return arr;
+      }
+    } catch (e) { /* ignore */ }
+    return SAMPLE_CLIENTS.slice();
+  }
+  function saveClients() {
+    try { localStorage.setItem("client-map-clients", JSON.stringify(clients)); } catch (e) { /* ignore */ }
+  }
+  function cityOf(name) {
+    for (var i = 0; i < CITIES.length; i++) if (CITIES[i].city === name) return CITIES[i];
+    return CITIES[0];
+  }
+  function project(lon, lat) {
+    return { x: (lon + 180) / 360 * 1000, y: (90 - lat) / 180 * 500 };
+  }
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS(NS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function localTime(tz) {
+    try {
+      return new Intl.DateTimeFormat("zh-CN", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
+    } catch (e) {
+      return "--:--";
+    }
+  }
+  function localHour(tz) {
+    try {
+      return Number(new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", hour12: false }).format(new Date()));
+    } catch (e) {
+      return -1;
+    }
+  }
+  function isWorking(tz) {
+    var h = localHour(tz);
+    return h >= 9 && h < 18;
+  }
+
+  /* ===== 渲染 ===== */
+  function render() {
+    // 大陆
+    var g = svgEl("g", {});
+    CONTINENTS.forEach(function (c) {
+      var pts = c.pts.map(function (p) {
+        var q = project(p[0], p[1]);
+        return q.x.toFixed(1) + "," + q.y.toFixed(1);
+      }).join(" ");
+      var poly = svgEl("polygon", { points: pts, class: "continent" });
+      g.appendChild(poly);
+    });
+    // 客户节点
+    clients.forEach(function (c, idx) {
+      var city = cityOf(c.city);
+      var p = project(city.lon, city.lat);
+      var node = svgEl("g", { class: "client-node", transform: "translate(" + p.x.toFixed(1) + "," + p.y.toFixed(1) + ")" });
+      var halo = svgEl("circle", { r: 12, fill: "none", stroke: "#C9A227", "stroke-width": 1.2, class: "client-halo" });
+      var dot = svgEl("circle", { r: 6, fill: "#E3C565", stroke: "#0B1D33", "stroke-width": 1.5 });
+      node.appendChild(halo);
+      node.appendChild(dot);
+      node.addEventListener("mouseenter", function (ev) { cancelHide(); showTooltip(ev, c, city, idx); });
+      node.addEventListener("mousemove", function (ev) { moveTooltip(ev); });
+      node.addEventListener("mouseleave", scheduleHide);
+      node.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        if (tooltip.classList.contains("show") && lastIdx === idx) { hideTooltip(); }
+        else { cancelHide(); showTooltip(ev, c, city, idx); }
+      });
+      g.appendChild(node);
+    });
+    map.replaceChildren(g);
+    renderStats();
+    renderList();
+  }
+
+  function renderStats() {
+    var countries = {};
+    clients.forEach(function (c) { countries[cityOf(c.city).country] = true; });
+    var working = clients.filter(function (c) { return isWorking(cityOf(c.city).tz); }).length;
+    document.getElementById("st-total").textContent = clients.length;
+    document.getElementById("st-countries").textContent = Object.keys(countries).length;
+    document.getElementById("st-working").textContent = working;
+  }
+
+  function renderList() {
+    var ul = document.getElementById("c-list");
+    ul.replaceChildren();
+    clients.forEach(function (c, idx) {
+      var li = document.createElement("li");
+      var left = document.createElement("span");
+      left.textContent = c.name;
+      var del = document.createElement("button");
+      del.textContent = "删除";
+      del.addEventListener("click", function () {
+        clients.splice(idx, 1);
+        saveClients();
+        render();
+      });
+      li.appendChild(left);
+      li.appendChild(del);
+      ul.appendChild(li);
+    });
+  }
+
+  /* ===== 工具提示 ===== */
+  var activeIdx = -1;
+  var lastIdx = -1;
+  var hideTimer = null;
+  function scheduleHide() { hideTimer = setTimeout(hideTooltip, 200); }
+  function cancelHide() { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } }
+  function showTooltip(ev, c, city, idx) {
+    activeIdx = idx;
+    lastIdx = idx;
+    tooltip.innerHTML = "";
+    var name = document.createElement("div");
+    name.className = "tt-name";
+    name.textContent = c.name;
+    var row1 = document.createElement("div");
+    row1.className = "tt-row";
+    row1.innerHTML = "<span class='tt-label'>所在地</span><span>" + city.city + " · " + city.country + "</span>";
+    var row2 = document.createElement("div");
+    row2.className = "tt-row";
+    row2.innerHTML = "<span class='tt-label'>当地时间</span><span id='tt-time'>" + localTime(city.tz) + "</span>";
+    var row3 = document.createElement("div");
+    row3.className = "tt-row";
+    var on = isWorking(city.tz);
+    row3.innerHTML = "<span class='tt-label'>跟进窗口</span><span class='tt-status " + (on ? "on" : "off") + "'>" + (on ? "工作中，适合跟进" : "休息中，建议当地 9 点后联系") + "</span>";
+    var del = document.createElement("button");
+    del.className = "tt-del";
+    del.textContent = "删除此客户";
+    del.addEventListener("click", function (e) {
+      e.stopPropagation();
+      clients.splice(activeIdx, 1);
+      saveClients();
+      render();
+      hideTooltip();
+    });
+    tooltip.appendChild(name);
+    tooltip.appendChild(row1);
+    tooltip.appendChild(row2);
+    tooltip.appendChild(row3);
+    tooltip.appendChild(del);
+    tooltip.classList.add("show");
+    moveTooltip(ev);
+  }
+  function moveTooltip(ev) {
+    var wrap = document.querySelector(".map-wrap");
+    var r = wrap.getBoundingClientRect();
+    var tx = ev.clientX - r.left + 16;
+    var ty = ev.clientY - r.top + 16;
+    var tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+    if (tx + tw > r.width - 8) tx = ev.clientX - r.left - tw - 12;
+    if (ty + th > r.height - 8) ty = ev.clientY - r.top - th - 12;
+    tooltip.style.left = Math.max(8, tx) + "px";
+    tooltip.style.top = Math.max(8, ty) + "px";
+  }
+  function hideTooltip() {
+    tooltip.classList.remove("show");
+    lastIdx = -1;
+    activeIdx = -1;
+  }
+  tooltip.addEventListener("mouseenter", cancelHide);
+  tooltip.addEventListener("mouseleave", scheduleHide);
+  document.querySelector(".map-wrap").addEventListener("click", function (ev) {
+    if (!ev.target.closest || !ev.target.closest(".client-node")) hideTooltip();
+  });
+  setInterval(function () {
+    if (activeIdx >= 0 && clients[activeIdx]) {
+      var tt = document.getElementById("tt-time");
+      if (tt) tt.textContent = localTime(cityOf(clients[activeIdx].city).tz);
+    }
+    renderStats();
+  }, 10000);
+
+  /* ===== 表单 ===== */
+  var select = document.getElementById("c-city");
+  CITIES.forEach(function (c) {
+    var opt = document.createElement("option");
+    opt.value = c.city;
+    opt.textContent = c.city + " · " + c.country;
+    select.appendChild(opt);
+  });
+  document.getElementById("add-btn").addEventListener("click", function () {
+    var name = document.getElementById("c-name").value.trim();
+    if (!name) { document.getElementById("c-name").focus(); return; }
+    clients.push({ name: name, city: select.value });
+    saveClients();
+    render();
+    document.getElementById("c-name").value = "";
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
