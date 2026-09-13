@@ -1,0 +1,9 @@
+{
+  "envId": "moxon-d5g38ag67372b323a",
+  "framework": {
+    "name": "vite"
+  },
+  "hosting": {
+    "deployPath": "/moxon-cv-web"
+  }
+}
